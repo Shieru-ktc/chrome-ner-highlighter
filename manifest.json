@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "NER Highlighter",
+  "version": "1.0",
+  "description": "テキストエリアの固有名詞をハイライトします。",
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"], 
+      "js": ["content.js"],
+      "css": ["content.css"] 
+    }
+  ],
+  
+ 
+  "host_permissions": [
+    "http://127.0.0.1:8000/*" 
+  ]
+}

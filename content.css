@@ -1,0 +1,7 @@
+::highlight(ner-highlight) {
+    /* ハイライトの色 */
+    background-color: yellow;
+    /* 文字の色 */
+    color: black;
+    text-decoration: underline wavy orange; 
+}
