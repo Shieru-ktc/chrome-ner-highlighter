@@ -1,66 +1,94 @@
-const textAreas = document.querySelectorAll('textarea');
+const isEditable = (element) => {
+    return element.nodeName === 'TEXTAREA' || element.isContentEditable;
+};
 
-textAreas.forEach(textArea => {
-    textArea.addEventListener('input', debounce(async (event) => {
-        const text = event.target.value;
-        
-        if (!text.trim()) {
-            clearHighlights(event.target);
-            return;
-        }
+document.body.addEventListener('keyup', debounce(async (event) => {
+    const targetElement = event.target;
 
+    if (!isEditable(targetElement)) {
+        CSS.highlights.clear();
+        return;
+    }
+
+    const text = targetElement.value || targetElement.textContent;
+
+    if (!text.trim()) {
+        CSS.highlights.clear();
+        return;
+    }
+
+    try {
         const namedEntities = await fetchNamedEntities(text);
-        
-        applyHighlights(event.target, namedEntities);
-
-    }, 500));
-});
+        applyHighlight(targetElement, namedEntities);
+    } catch (error) {
+        CSS.highlights.clear();
+    }
+}, 500));
 
 async function fetchNamedEntities(text) {
-    const backendUrl = "http://127.0.0.1:8000/process-text";
-    
+    const backendUrl = "http://127.0.0.1:8000/ner"; 
     try {
         const response = await fetch(backendUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: text })
         });
-
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return [];
         }
-        
         const data = await response.json();
-        return data.entities; 
-
+        return data.entities || [];
     } catch (error) {
-        console.error("NERバックエンドとの通信エラー:", error);
         return [];
     }
 }
 
-function applyHighlights(element, entities) {
-    clearHighlights(element); 
+function applyHighlight(element, entities) {
+    CSS.highlights.clear();
 
-    if (entities.length === 0) return;
-    const ranges = entities.map(entity => {
-        const range = new Range();
-        range.setStart(element.firstChild, entity.start);
-        range.setEnd(element.firstChild, entity.end);
-        return range;
-    });
-
-    try {
-        const highlight = new Highlight(...ranges);
-        CSS.highlights.set('ner-highlight', highlight);
-    } catch (e) {
-        console.error("Highlight APIの適用エラー:", e);
+    if (!CSS.highlights || !entities || entities.length === 0) {
+        return;
     }
-}
 
-function clearHighlights(element) {
-    if (CSS.highlights) {
-        CSS.highlights.clear();
+    const ranges = [];
+    const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+
+    for (const entity of entities) {
+        const entityStart = entity.start;
+        const entityEnd = entity.end;
+        let startNode, startOffset, endNode, endOffset;
+
+        treeWalker.currentNode = element;
+        let charCount = 0;
+        let currentNode;
+        
+        while (currentNode = treeWalker.nextNode()) {
+            const nodeEnd = charCount + currentNode.length;
+            if (!startNode && entityStart < nodeEnd) {
+                startNode = currentNode;
+                startOffset = entityStart - charCount;
+            }
+            if (!endNode && entityEnd <= nodeEnd) {
+                endNode = currentNode;
+                endOffset = entityEnd - charCount;
+                break; 
+            }
+            charCount = nodeEnd;
+        }
+
+        if (startNode && endNode) {
+            const range = new Range();
+            range.setStart(startNode, startOffset);
+            range.setEnd(endNode, endOffset);
+            ranges.push(range);
+        }
+    }
+
+    if (ranges.length > 0) {
+        setTimeout(() => {
+            const nerHighlight = new Highlight(...ranges);
+            CSS.highlights.set('ner-highlight', nerHighlight);
+        }, 0);
     }
 }
 
