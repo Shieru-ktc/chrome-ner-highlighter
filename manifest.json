@@ -9,12 +9,11 @@
       "matches": ["https://chatgpt.com/*",
         "https://gemini.google.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["dist/content.js"],
       "css": ["content.css"] 
     }
   ],
   
- 
   "host_permissions": [
     "http://127.0.0.1:8000/*" 
   ]

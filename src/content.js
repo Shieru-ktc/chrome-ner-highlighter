@@ -26,7 +26,7 @@ document.body.addEventListener('keyup', debounce(async (event) => {
 }, 500));
 
 async function fetchNamedEntities(text) {
-    const backendUrl = "http://127.0.0.1:8000/ner"; 
+    const backendUrl = "http://127.0.0.1:8000/ner_text"; 
     try {
         const response = await fetch(backendUrl, {
             method: 'POST',
@@ -37,7 +37,7 @@ async function fetchNamedEntities(text) {
             return [];
         }
         const data = await response.json();
-        return data.entities || [];
+        return data || [];
     } catch (error) {
         return [];
     }
