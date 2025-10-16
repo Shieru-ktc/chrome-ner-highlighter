@@ -1,7 +1,31 @@
-::highlight(ner-highlight) {
-    /* ハイライトの色 */
-    background-color: yellow;
-    /* 文字の色 */
-    color: black;
-    text-decoration: underline wavy orange; 
+::highlight(ner-highlight-per) {
+  background-color: #f08080; /* PER (人名): ライトコーラル */
+  color: #ffffff;
+}
+
+::highlight(ner-highlight-org),
+::highlight(ner-highlight-org-p),
+::highlight(ner-highlight-org-o) {
+  background-color: #4682b4; /* ORG (組織): スチールブルー */
+  color: #ffffff;
+}
+
+::highlight(ner-highlight-loc) {
+  background-color: #3cb371; /* LOC (場所): メディウムシーグリーン */
+  color: #ffffff;
+}
+
+::highlight(ner-highlight-ins) {
+  background-color: #daa520; /* INS (施設): ゴールデンロッド */
+  color: #000000;
+}
+
+::highlight(ner-highlight-prd) {
+  background-color: #9370db; /* PRD (製品): ミディアムパープル */
+  color: #ffffff;
+}
+
+::highlight(ner-highlight-evt) {
+  background-color: #ffd700; /* EVT (イベント): ゴールド */
+  color: #000000;
 }

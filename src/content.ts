@@ -47,45 +47,51 @@ function applyHighlight(element: HTMLElement, entities: NERResponse) {
   if (!CSS.highlights || !entities || entities.length === 0) {
     return;
   }
-
-  const ranges: Range[] = [];
   const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 
-  for (const entity of entities) {
-    const entityStart = entity.start;
-    const entityEnd = entity.end;
-    let startNode, startOffset, endNode, endOffset;
+  const groupedEntities = Object.groupBy(entities, (e) => e.entity_group);
 
-    treeWalker.currentNode = element;
-    let charCount = 0;
-    let currentNode;
+  for (const [group, entities] of Object.entries(groupedEntities)) {
+    const ranges: Range[] = [];
+    for (const entity of entities) {
+      const entityStart = entity.start;
+      const entityEnd = entity.end;
+      let startNode, startOffset, endNode, endOffset;
 
-    while ((currentNode = treeWalker.nextNode() as Text)) {
-      const nodeEnd = charCount + currentNode.length;
-      if (!startNode && entityStart < nodeEnd) {
-        startNode = currentNode;
-        startOffset = entityStart - charCount;
+      treeWalker.currentNode = element;
+      let charCount = 0;
+      let currentNode;
+
+      while ((currentNode = treeWalker.nextNode() as Text)) {
+        const nodeEnd = charCount + currentNode.length;
+        if (!startNode && entityStart < nodeEnd) {
+          startNode = currentNode;
+          startOffset = entityStart - charCount;
+        }
+        if (!endNode && entityEnd <= nodeEnd) {
+          endNode = currentNode;
+          endOffset = entityEnd - charCount;
+          break;
+        }
+        charCount = nodeEnd;
       }
-      if (!endNode && entityEnd <= nodeEnd) {
-        endNode = currentNode;
-        endOffset = entityEnd - charCount;
-        break;
+
+      if (startNode && endNode) {
+        const range = new Range();
+        range.setStart(startNode, startOffset || 0);
+        range.setEnd(endNode, endOffset || 0);
+        ranges.push(range);
       }
-      charCount = nodeEnd;
     }
 
-    if (startNode && endNode) {
-      const range = new Range();
-      range.setStart(startNode, startOffset || 0);
-      range.setEnd(endNode, endOffset || 0);
-      ranges.push(range);
+    if (ranges.length > 0) {
+      setTimeout(() => {
+        const nerHighlight = new Highlight(...ranges);
+        CSS.highlights.set(
+          `ner-highlight-${group.toLowerCase()}`,
+          nerHighlight
+        );
+      }, 0);
     }
-  }
-
-  if (ranges.length > 0) {
-    setTimeout(() => {
-      const nerHighlight = new Highlight(...ranges);
-      CSS.highlights.set("ner-highlight", nerHighlight);
-    }, 0);
   }
 }
