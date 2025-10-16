@@ -1,16 +1,9 @@
 import type { NERResponse } from "./types";
 
-const isEditable = (element: HTMLElement) => {
-  return element.nodeName === "TEXTAREA" || element.isContentEditable;
-};
+const threshold = 0.85;
 
 document.body.addEventListener("input", async (event) => {
   const targetElement = event.target as HTMLInputElement;
-
-  if (!isEditable(targetElement)) {
-    CSS.highlights.clear();
-    return;
-  }
 
   const text = targetElement.value || targetElement.textContent;
 
@@ -42,14 +35,15 @@ async function fetchNamedEntities(text: string) {
 }
 
 function applyHighlight(element: HTMLElement, entities: NERResponse) {
-  CSS.highlights.clear();
-
   if (!CSS.highlights || !entities || entities.length === 0) {
     return;
   }
   const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 
-  const groupedEntities = Object.groupBy(entities, (e) => e.entity_group);
+  const groupedEntities = Object.groupBy(
+    entities.filter((e) => e.score >= threshold),
+    (e) => e.entity_group
+  );
 
   for (const [group, entities] of Object.entries(groupedEntities)) {
     const ranges: Range[] = [];
