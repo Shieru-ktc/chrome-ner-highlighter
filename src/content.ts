@@ -1,34 +1,33 @@
-const isEditable = (element) => {
+import type { NERResponse } from "./types";
+
+const isEditable = (element: HTMLElement) => {
   return element.nodeName === "TEXTAREA" || element.isContentEditable;
 };
 
-document.body.addEventListener(
-  "keyup",
-  debounce(async (event) => {
-    const targetElement = event.target;
+document.body.addEventListener("keyup", async (event) => {
+  const targetElement = event.target as HTMLInputElement;
 
-    if (!isEditable(targetElement)) {
-      CSS.highlights.clear();
-      return;
-    }
+  if (!isEditable(targetElement)) {
+    CSS.highlights.clear();
+    return;
+  }
 
-    const text = targetElement.value || targetElement.textContent;
+  const text = targetElement.value || targetElement.textContent;
 
-    if (!text.trim()) {
-      CSS.highlights.clear();
-      return;
-    }
+  if (!text.trim()) {
+    CSS.highlights.clear();
+    return;
+  }
 
-    try {
-      const namedEntities = await fetchNamedEntities(text);
-      applyHighlight(targetElement, namedEntities);
-    } catch (error) {
-      CSS.highlights.clear();
-    }
-  }, 0)
-);
+  try {
+    const namedEntities = await fetchNamedEntities(text);
+    applyHighlight(targetElement, namedEntities);
+  } catch (error) {
+    CSS.highlights.clear();
+  }
+});
 
-async function fetchNamedEntities(text) {
+async function fetchNamedEntities(text: string) {
   const backendUrl = "http://127.0.0.1:8000/ner_text";
   try {
     const response = await fetch(backendUrl, {
@@ -46,14 +45,14 @@ async function fetchNamedEntities(text) {
   }
 }
 
-function applyHighlight(element, entities) {
+function applyHighlight(element: HTMLElement, entities: NERResponse) {
   CSS.highlights.clear();
 
   if (!CSS.highlights || !entities || entities.length === 0) {
     return;
   }
 
-  const ranges = [];
+  const ranges: Range[] = [];
   const treeWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
 
   for (const entity of entities) {
@@ -65,7 +64,7 @@ function applyHighlight(element, entities) {
     let charCount = 0;
     let currentNode;
 
-    while ((currentNode = treeWalker.nextNode())) {
+    while ((currentNode = treeWalker.nextNode() as Text)) {
       const nodeEnd = charCount + currentNode.length;
       if (!startNode && entityStart < nodeEnd) {
         startNode = currentNode;
@@ -81,8 +80,8 @@ function applyHighlight(element, entities) {
 
     if (startNode && endNode) {
       const range = new Range();
-      range.setStart(startNode, startOffset);
-      range.setEnd(endNode, endOffset);
+      range.setStart(startNode, startOffset || 0);
+      range.setEnd(endNode, endOffset || 0);
       ranges.push(range);
     }
   }
@@ -93,14 +92,4 @@ function applyHighlight(element, entities) {
       CSS.highlights.set("ner-highlight", nerHighlight);
     }, 0);
   }
-}
-
-function debounce(func, delay) {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      func.apply(null, args);
-    }, delay);
-  };
 }
