@@ -4,7 +4,7 @@ const isEditable = (element: HTMLElement) => {
   return element.nodeName === "TEXTAREA" || element.isContentEditable;
 };
 
-document.body.addEventListener("keyup", async (event) => {
+document.body.addEventListener("input", async (event) => {
   const targetElement = event.target as HTMLInputElement;
 
   if (!isEditable(targetElement)) {
@@ -29,20 +29,16 @@ document.body.addEventListener("keyup", async (event) => {
 
 async function fetchNamedEntities(text: string) {
   const backendUrl = "http://127.0.0.1:8000/ner_text";
-  try {
-    const response = await fetch(backendUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: text }),
-    });
-    if (!response.ok) {
-      return [];
-    }
-    const data = await response.json();
-    return data || [];
-  } catch (error) {
+  const response = await fetch(backendUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: text }),
+  });
+  if (!response.ok) {
     return [];
   }
+  const data = await response.json();
+  return data || [];
 }
 
 function applyHighlight(element: HTMLElement, entities: NERResponse) {
